@@ -51,3 +51,13 @@ This project forwards the POST body to the connected Bluetooth printer. Test the
 ## Build fix
 
 The network-status Boolean expression has been rewritten in an unambiguous Kotlin form to avoid the Kotlin parser error reported by GitHub Actions.
+
+
+## AH Connect modern UI
+
+- App name: **AH Connect**
+- Transparent upper network indicator.
+- Colorful gradient bottom navigation with modern selected state.
+- Pull down on Attendance or Chat to refresh the web page.
+- Modern printer card and controls.
+- Footer: **Designed and Developed by Dr. Avidipta Hazra**.

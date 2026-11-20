@@ -1,8 +1,14 @@
 <resources>
-    <color name="hmai_blue">#4A78C8</color>
-    <color name="hmai_blue_dark">#315FAE</color>
+    <color name="ah_primary">#2457D6</color>
+    <color name="ah_primary_dark">#173B9B</color>
+    <color name="ah_cyan">#00B8D9</color>
+    <color name="ah_purple">#7C4DFF</color>
+    <color name="ah_pink">#EC407A</color>
+    <color name="ah_green">#16A085</color>
+    <color name="ah_orange">#FF8A00</color>
+    <color name="ah_bg">#F6F8FC</color>
+    <color name="ah_text">#172033</color>
+    <color name="ah_muted">#68738A</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#111111</color>
-    <color name="green">#2E9B59</color>
-    <color name="red">#D9534F</color>
 </resources>

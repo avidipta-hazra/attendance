@@ -19,6 +19,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import android.view.Gravity
 import android.graphics.Color
 import java.io.*
@@ -70,6 +71,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = Color.TRANSPARENT
         buildShell()
         requestBluetoothPermissions()
         updateNetworkStatus()
@@ -81,40 +83,42 @@ class MainActivity : Activity() {
     private fun buildShell() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.WHITE)
+            setBackgroundResource(R.drawable.app_bg)
         }
 
         networkText = TextView(this).apply {
-            text = "  Network: checking..."
+            text = "  ●  Network: checking…"
             textSize = 14f
             gravity = Gravity.CENTER_VERTICAL
-            setTextColor(Color.DKGRAY)
-            setBackgroundResource(R.drawable.status_bg)
+            setTextColor(Color.rgb(22, 160, 133))
+            setBackgroundResource(R.drawable.network_transparent)
+            setPadding(dp(14), dp(16), dp(14), 0)
         }
-        root.addView(networkText, LinearLayout.LayoutParams(-1, dp(42)))
+        root.addView(networkText, LinearLayout.LayoutParams(-1, dp(50)))
 
         content = FrameLayout(this).apply {
-            setBackgroundColor(Color.WHITE)
+            setBackgroundResource(R.drawable.app_bg)
         }
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
 
         val nav = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(dp(8), dp(10), dp(8), dp(10))
-            setBackgroundColor(Color.rgb(74, 120, 200))
+            setPadding(dp(10), dp(10), dp(10), dp(14))
+            setBackgroundResource(R.drawable.nav_gradient)
+            elevation = dp(12).toFloat()
         }
 
-        attendanceButton = navButton("Attendance")
-        printerButton = navButton("Printer Connection")
-        chatButton = navButton("Chat")
+        attendanceButton = navButton("●\nAttendance")
+        printerButton = navButton("▣\nPrinter")
+        chatButton = navButton("●\nChat")
 
         nav.addView(attendanceButton,
-            LinearLayout.LayoutParams(0, dp(64), 1f).apply { marginEnd = dp(6) })
+            LinearLayout.LayoutParams(0, dp(68), 1f).apply { marginEnd = dp(6) })
         nav.addView(printerButton,
-            LinearLayout.LayoutParams(0, dp(64), 1.35f).apply { marginEnd = dp(6) })
+            LinearLayout.LayoutParams(0, dp(68), 1f).apply { marginEnd = dp(6) })
         nav.addView(chatButton,
-            LinearLayout.LayoutParams(0, dp(64), .8f))
+            LinearLayout.LayoutParams(0, dp(68), 1f))
 
         root.addView(nav)
         setContentView(root)
@@ -128,23 +132,32 @@ class MainActivity : Activity() {
 
     private fun navButton(label: String) = Button(this).apply {
         text = label
-        textSize = 16f
+        textSize = 13f
         setTextColor(Color.WHITE)
         isAllCaps = false
-        setBackgroundResource(R.drawable.bottom_button)
+        gravity = Gravity.CENTER
+        setBackgroundResource(R.drawable.nav_item)
         stateListAnimator = null
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
     }
 
     private fun select(button: Button) {
-        listOf(attendanceButton, printerButton, chatButton).forEach {
-            it.setBackgroundResource(R.drawable.bottom_button)
-        }
-        button.setBackgroundResource(R.drawable.bottom_button_selected)
+        listOf(attendanceButton, printerButton, chatButton).forEach { it.isSelected = false }
+        button.isSelected = true
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun makeWebView(url: String): WebView {
-        return WebView(this).apply {
+    private fun makeWebView(url: String): SwipeRefreshLayout {
+        val refresh = SwipeRefreshLayout(this).apply {
+            setColorSchemeColors(
+                Color.rgb(36, 87, 214),
+                Color.rgb(124, 77, 255),
+                Color.rgb(236, 64, 122)
+            )
+            setProgressBackgroundColorSchemeColor(Color.WHITE)
+        }
+
+        val web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.databaseEnabled = true
@@ -159,10 +172,18 @@ class MainActivity : Activity() {
                 settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             }
 
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    refresh.isRefreshing = false
+                }
+            }
             webChromeClient = WebChromeClient()
             loadUrl(url)
         }
+
+        refresh.addView(web, FrameLayout.LayoutParams(-1, -1))
+        refresh.setOnRefreshListener { web.reload() }
+        return refresh
     }
 
     private fun showAttendance() {
@@ -186,48 +207,82 @@ class MainActivity : Activity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(18), dp(18), dp(24))
+            setPadding(dp(16), dp(10), dp(16), dp(28))
         }
         scroll.addView(box)
 
-        box.addView(TextView(this).apply {
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(20), dp(20), dp(20))
+            setBackgroundResource(R.drawable.modern_card)
+            elevation = dp(4).toFloat()
+        }
+        header.addView(TextView(this).apply {
             text = "Printer Connection"
-            textSize = 25f
-            setTextColor(Color.rgb(49, 95, 174))
-            setPadding(0, 0, 0, dp(8))
+            textSize = 28f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(36, 87, 214))
+        })
+        header.addView(TextView(this).apply {
+            text = "LD0801  •  Bluetooth thermal printer"
+            textSize = 15f
+            setTextColor(Color.rgb(104, 115, 138))
+            setPadding(0, dp(6), 0, 0)
+        })
+        box.addView(header, LinearLayout.LayoutParams(-1, -2).apply {
+            bottomMargin = dp(14)
         })
 
-        box.addView(TextView(this).apply {
-            text = "LD0801 Bluetooth thermal printer"
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(18), dp(18), dp(18))
+            setBackgroundResource(R.drawable.modern_card)
+        }
+        card.addView(TextView(this).apply {
+            text = "① Select your printer"
             textSize = 17f
-            setTextColor(Color.DKGRAY)
-            setPadding(0, 0, 0, dp(18))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(23, 32, 51))
         })
 
         val spinner = Spinner(this)
         deviceSpinner = spinner
-        box.addView(spinner, LinearLayout.LayoutParams(-1, dp(52)))
+        card.addView(spinner, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(8) })
 
         val refresh = Button(this).apply {
-            text = "Refresh Paired Printers"
+            text = "↻  Refresh Paired Printers"
             isAllCaps = false
+            setTextColor(Color.rgb(36, 87, 214))
+            setBackgroundResource(R.drawable.secondary_button)
         }
-        box.addView(refresh)
+        card.addView(refresh, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(8) })
+
+        card.addView(TextView(this).apply {
+            text = "② Connect"
+            textSize = 17f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(23, 32, 51))
+            setPadding(0, dp(18), 0, 0)
+        })
 
         val connect = Button(this).apply {
-            text = "Connect Printer"
+            text = "✓  Connect Printer"
             isAllCaps = false
+            setTextColor(Color.WHITE)
+            setBackgroundResource(R.drawable.primary_button)
         }
         connectButton = connect
-        box.addView(connect)
+        card.addView(connect, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(8) })
 
         val server = Button(this).apply {
-            text = if (serverSocket != null) "Stop Local Print Server"
-                    else "Start Local Print Server"
+            text = if (serverSocket != null) "■  Stop Local Print Server"
+                    else "▶  Start Local Print Server"
             isAllCaps = false
+            setTextColor(Color.rgb(36, 87, 214))
+            setBackgroundResource(R.drawable.secondary_button)
         }
         serverButton = server
-        box.addView(server)
+        card.addView(server, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(8) })
 
         val stat = TextView(this).apply {
             text = if (socket?.isConnected == true)
@@ -241,12 +296,22 @@ class MainActivity : Activity() {
             setPadding(0, dp(18), 0, 0)
         }
         status = stat
-        box.addView(stat)
+        card.addView(stat)
 
+        card.addView(TextView(this).apply {
+            text = "Local print bridge  •  127.0.0.1:$PORT"
+            textSize = 13f
+            setTextColor(Color.rgb(104, 115, 138))
+            setPadding(0, dp(8), 0, 0)
+        })
+
+        box.addView(card, LinearLayout.LayoutParams(-1, -2))
         box.addView(TextView(this).apply {
-            text = "Local print endpoint: http://127.0.0.1:9101/print"
-            textSize = 14f
-            setPadding(0, dp(12), 0, 0)
+            text = "Designed and Developed by Dr. Avidipta Hazra"
+            textSize = 12f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(104, 115, 138))
+            setPadding(0, dp(24), 0, dp(8))
         })
 
         refresh.setOnClickListener { refreshBondedDevices() }
